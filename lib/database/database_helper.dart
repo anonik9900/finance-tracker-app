@@ -18,7 +18,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 1,
+      version: 3, // 🔥 aggiornato
       onCreate: _createDB,
     );
   }
@@ -41,8 +41,20 @@ CREATE TABLE budgets (
   amount REAL
 )
 ''');
+
+    // 🔥 CATEGORIES con colore
+    await db.execute('''
+CREATE TABLE categories (
+  name TEXT PRIMARY KEY,
+  icon INTEGER,
+  color INTEGER
+)
+''');
   }
 
+  // =====================
+  // TRANSACTIONS
+  // =====================
   Future<List<Map<String, dynamic>>> getTransactions() async {
     final db = await database;
     return await db.query('transactions', orderBy: 'id DESC');
@@ -58,6 +70,9 @@ CREATE TABLE budgets (
     await db.delete('transactions', where: 'id = ?', whereArgs: [id]);
   }
 
+  // =====================
+  // BUDGET
+  // =====================
   Future<void> insertOrUpdateBudget(String cat, double amount) async {
     final db = await database;
     await db.insert(
@@ -74,6 +89,36 @@ CREATE TABLE budgets (
     return {
       for (var row in result)
         row['category'] as String: row['amount'] as double
+    };
+  }
+
+  // =====================
+  // CATEGORIES
+  // =====================
+  Future<void> insertCategory(
+      String name, int icon, int color) async {
+    final db = await database;
+    await db.insert(
+      'categories',
+      {
+        'name': name,
+        'icon': icon,
+        'color': color,
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<Map<String, Map<String, int>>> getCategories() async {
+    final db = await database;
+    final result = await db.query('categories');
+
+    return {
+      for (var row in result)
+        row['name'] as String: {
+          'icon': row['icon'] as int,
+          'color': row['color'] as int,
+        }
     };
   }
 }
